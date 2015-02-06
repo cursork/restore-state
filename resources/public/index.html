@@ -7,6 +7,12 @@
   <body>
     <h1>Example</h1>
     <div id="app"></div>
+    <hr>
+    <div>
+      <button onclick="restore_state.core.dump_to_file()">Dump</button>
+      <label>Restore:</label>
+      <input type="file" onchange="restore_state.core.restore_from_file(this, this.files[0])">
+    </div>
     <script type="text/javascript" src="js/goog/base.js"></script>
     <script type="text/javascript" src="js/main.js"></script>
     <script type="text/javascript">goog.require('restore_state.core');</script>

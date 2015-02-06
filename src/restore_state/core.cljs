@@ -1,11 +1,16 @@
 (ns restore-state.core
-  (:require [cljsjs.react]
+  (:require [cljs.reader     :refer [read-string]]
+            [cljsjs.react]
             [figwheel.client :as figwheel]
             [reagent.core    :as reagent]))
+
+(enable-console-print!)
 
 (defonce counter   (atom 0))
 (defonce undo-redo (atom [[[]] '()]))
 (defonce state     (reagent/atom []))
+
+;; State Updating ;;
 
 (defn add
   [colour]
@@ -37,6 +42,38 @@
     (when (seq r)
       (reset! state (first r))
       (reset! undo-redo [(conj u s) (rest r)]))))
+
+;; Dumping and Restoring ;;
+(defn dump-to-file
+  []
+  (let [to-dump (pr-str {:counter   @counter
+                         :undo-redo @undo-redo
+                         :state     @state})
+        url     (->> (js/Blob. #js [to-dump] #js {"type" "application/edn"})
+                     (.createObjectURL js/URL))
+        a       (.createElement js/document "a")]
+    (set! (.-href a) url)
+    (set! (.-download a) "state.edn")
+    (.appendChild (.-body js/document) a)
+    (.click a)
+    (.remove a)))
+
+(defn restore-state
+  [text]
+  (when-let [to-restore (read-string text)]
+    (reset! counter   (:counter to-restore))
+    (reset! undo-redo (:undo-redo to-restore))
+    (reset! state     (:state to-restore))))
+
+(defn restore-from-file
+  [input file]
+  (let [fr (js/FileReader.)]
+    (set! (.-onload fr)
+          #(restore-state (.-result fr)))
+    (.readAsText fr file)
+    (set! (.-value input) nil)))
+
+;; Reagent ;;
 
 (defn boxes
   []
